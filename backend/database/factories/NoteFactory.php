@@ -18,6 +18,7 @@ class NoteFactory extends Factory
             'student_id' => Student::query()->inRandomOrder()->value('id'),
             'teacher_id' => User::query()->inRandomOrder()->value('id'),
             'class_id' => SchoolClass::query()->inRandomOrder()->value('id'),
+            'note_type' => $this->faker->randomElement(['positive', 'negative']),
             'content' => $this->faker->sentence(12),
         ];
     }

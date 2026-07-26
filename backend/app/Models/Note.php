@@ -14,6 +14,7 @@ class Note extends Model
         'student_id',
         'teacher_id',
         'class_id',
+        'note_type',
         'content',
     ];
 

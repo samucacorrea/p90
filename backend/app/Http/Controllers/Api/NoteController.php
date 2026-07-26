@@ -25,6 +25,20 @@ class NoteController extends Controller
             $query->where('class_id', $request->integer('class_id'));
         }
 
+        if ($request->filled('note_type')) {
+            $query->where('note_type', $request->string('note_type')->toString());
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->string('date_from')->toString());
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->string('date_to')->toString());
+        }
+
+        $query->orderByDesc('created_at');
+
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
         $notes = $query->paginate($perPage);
 
@@ -37,6 +51,7 @@ class NoteController extends Controller
             'student_id' => ['required', 'integer', 'exists:students,id'],
             'teacher_id' => ['nullable', 'integer', 'exists:users,id'],
             'class_id' => ['nullable', 'integer', 'exists:school_classes,id'],
+            'note_type' => ['required', 'string', 'in:positive,negative'],
             'content' => ['required', 'string'],
         ]);
 
@@ -60,6 +75,7 @@ class NoteController extends Controller
             'student_id' => ['sometimes', 'integer', 'exists:students,id'],
             'teacher_id' => ['nullable', 'integer', 'exists:users,id'],
             'class_id' => ['nullable', 'integer', 'exists:school_classes,id'],
+            'note_type' => ['sometimes', 'string', 'in:positive,negative'],
             'content' => ['sometimes', 'string'],
         ]);
 
