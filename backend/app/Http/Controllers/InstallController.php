@@ -103,14 +103,30 @@ class InstallController extends Controller
             return back()->withErrors(['db' => 'Falha ao conectar no banco de dados. Verifique as credenciais.'])->withInput();
         }
 
-        if ($this->canWriteEnv()) {
-            $this->ensureEnvFile();
+        $this->ensureEnvFile();
+        $canWriteEnv = $this->canWriteEnv();
+        $appKey = config('app.key');
+
+        if (! $canWriteEnv && blank($appKey)) {
+            return back()
+                ->withErrors([
+                    'env' => 'O instalador nao conseguiu persistir a chave da aplicacao. Defina APP_KEY nas variaveis do container ou libere escrita no arquivo .env.',
+                ])
+                ->withInput();
+        }
+
+        if (blank($appKey)) {
+            $appKey = 'base64:' . base64_encode(random_bytes(32));
+        }
+
+        if ($canWriteEnv) {
             $this->updateEnv([
                 'APP_NAME' => '"' . $data['app_name'] . '"',
                 'APP_URL' => $data['app_url'],
                 'APP_ENV' => 'production',
                 'APP_DEBUG' => 'false',
                 'APP_INSTALLED' => 'true',
+                'APP_KEY' => $appKey,
                 'DB_CONNECTION' => 'mysql',
                 'DB_HOST' => $data['db_host'],
                 'DB_PORT' => $dbPort,
@@ -120,8 +136,19 @@ class InstallController extends Controller
             ]);
         }
 
-        Artisan::call('key:generate', ['--force' => true]);
-        Artisan::call('config:clear');
+        config([
+            'app.key' => $appKey,
+        ]);
+
+        try {
+            Artisan::call('config:clear');
+        } catch (\Throwable $e) {
+            return back()
+                ->withErrors([
+                    'install' => 'Falha ao limpar a configuracao da aplicacao durante a instalacao.',
+                ])
+                ->withInput();
+        }
 
         config([
             'database.connections.mysql.host' => $data['db_host'],
@@ -133,8 +160,16 @@ class InstallController extends Controller
         DB::purge('mysql');
         DB::reconnect('mysql');
 
-        Artisan::call('migrate', ['--force' => true]);
-        Artisan::call('storage:link');
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            Artisan::call('storage:link');
+        } catch (\Throwable $e) {
+            return back()
+                ->withErrors([
+                    'install' => 'Falha ao finalizar a instalacao. Verifique permissoes de storage, symlink e acesso ao banco.',
+                ])
+                ->withInput();
+        }
 
         $avatarPath = null;
         if ($request->hasFile('admin_avatar')) {
