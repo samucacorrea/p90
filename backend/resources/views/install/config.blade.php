@@ -12,7 +12,7 @@
     </div>
   @endif
 
-  <form method="POST" action="{{ route('install.run') }}" enctype="multipart/form-data">
+  <form method="POST" action="{{ route('install.run', [], true) }}" enctype="multipart/form-data">
     @csrf
     <div class="section">
       <h2 style="font-size:16px; margin:0 0 10px;">Aplicacao</h2>
@@ -20,7 +20,7 @@
       <input class="input" name="app_name" value="{{ old('app_name', 'P90 Admin') }}" required>
 
       <label class="label" style="margin-top:12px;">URL do App</label>
-      <input class="input" name="app_url" value="{{ old('app_url', request()->getSchemeAndHttpHost()) }}" required>
+      <input class="input" name="app_url" value="{{ old('app_url', config('app.url')) }}" required>
     </div>
 
     <div class="section">
@@ -53,7 +53,7 @@
       <input class="input" name="admin_phone" value="{{ old('admin_phone') }}">
 
       <label class="label" style="margin-top:12px;">Data de nascimento</label>
-      <input class="input" name="admin_birth_date" placeholder="YYYY-MM-DD" value="{{ old('admin_birth_date') }}">
+      <input class="input" name="admin_birth_date" type="date" value="{{ old('admin_birth_date') }}">
 
       <label class="label" style="margin-top:12px;">Senha</label>
       <input class="input" name="admin_password" type="password" required>
