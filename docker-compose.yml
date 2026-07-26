@@ -1,0 +1,50 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: p90-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: p90
+      MYSQL_USER: p90
+      MYSQL_PASSWORD: p90pass
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: p90-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env.docker
+    ports:
+      - "8000:80"
+    volumes:
+      - backend_storage:/var/www/html/storage
+
+  frontend:
+    build:
+      context: ./frontend/web-admin
+    container_name: p90-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/web-admin/.env.docker
+    ports:
+      - "3001:3000"
+
+volumes:
+  mysql_data:
+  backend_storage:
